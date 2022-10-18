@@ -20,6 +20,8 @@ data <- read.csv(file="data.csv", sep=";")
 data$school <- as.factor(data$school)
 data$gender <- as.factor(data$gender)
 data$age <- as.numeric(data$age)
+data$help <- as.factor(data$help)
+data$volont <- as.factor(data$volont)
 data$n_plate<- as.numeric(data$n_plate)
 data$n_obs <- as.numeric(data$n_obs)
 data$n_conf <- as.numeric(data$n_conf)
@@ -37,7 +39,7 @@ summary(data, maxsum=20)
 
 
 # setting up likert scale answers
-lik <- data[,9:28]
+lik <- data[,11:30]
 lik[lik==1] <- "Strongly disagree"
 lik[lik==2] <- "Somewhat disagree"
 lik[lik==3] <- "Not disagree or agree"
@@ -45,7 +47,7 @@ lik[lik==4] <- "Somewhat agree"
 lik[lik==5] <-"Strongly agree"
 lik[]<- lapply(lik, as.factor)
 
-likert <- data[,9:28]
+likert <- data[,11:30]
 
 
 #Figure 1 
@@ -110,7 +112,7 @@ data$Item20 <-(6-data$Item20)
 
 # characteristiscs
 
-sum(data$n_plate) #537 respondents, 1257 plates
+sum(data$n_plate) #645 respondents, 1487 plates
 
 
 # accuracy for presence/absence
@@ -126,8 +128,8 @@ FP <- table[2]
 TN <- table[3]
 TP <- table[4]
 
-accuracy = round((TP + TN) / sum(TP,FP,TN,FN),2) #0.76
-classification_error_rate = round((FP + FN) / sum(TP,FP,TN,FN),2) #0.24
+accuracy = round((TP + TN) / sum(TP,FP,TN,FN),2) #0.77
+classification_error_rate = round((FP + FN) / sum(TP,FP,TN,FN),2) #0.23
 precision = round(TP / (TP + FP), 2) #0.62
 sensitivity = round(TP / (TP + FN), 2) #0.82
 specificity = round(TN / (TN + FP), 2) #0.73
@@ -148,17 +150,17 @@ FP_U <- table_class[2,2]
 TN_U <- table_class[3,2]
 TP_U <- table_class[4,2]
 
-accuracy_U = round((TP_U + TN_U) / sum(TP_U,FP_U,TN_U,FN_U),2) #0.77
-classification_error_rate_U = round((FP_U + FN_U) / sum(TP_U,FP_U,TN_U,FN_U),2) #0.23
-precision_U = round(TP_U / (TP_U + FP_U), 2) #0.69
-sensitivity_U = round(TP_U / (TP_U + FN_U), 2) #0.84
-specificity_U = round(TN_U / (TN_U + FP_U), 2) #0.73
+accuracy_U = round((TP_U + TN_U) / sum(TP_U,FP_U,TN_U,FN_U),2) #0.79
+classification_error_rate_U = round((FP_U + FN_U) / sum(TP_U,FP_U,TN_U,FN_U),2) #0.21
+precision_U = round(TP_U / (TP_U + FP_U), 2) #0.64
+sensitivity_U = round(TP_U / (TP_U + FN_U), 2) #0.89
+specificity_U = round(TN_U / (TN_U + FP_U), 2) #0.74
 
-accuracy_L = round((TP_L + TN_L) / sum(TP_L,FP_L,TN_L,FN_L),2) #0.56
-classification_error_rate_L = round((FP_L + FN_L) / sum(TP_L,FP_L,TN_L,FN_L),2) #0.44
-precision_L = round(TP_L / (TP_L + FP_L), 2) #0.42
-sensitivity_L = round(TP_L / (TP_L + FN_L), 2) #0.38
-specificity_L = round(TN_L / (TN_L + FP_L), 2) #0.67
+accuracy_L = round((TP_L + TN_L) / sum(TP_L,FP_L,TN_L,FN_L),2) #0.62
+classification_error_rate_L = round((FP_L + FN_L) / sum(TP_L,FP_L,TN_L,FN_L),2) #0.38
+precision_L = round(TP_L / (TP_L + FP_L), 2) #0.59
+sensitivity_L = round(TP_L / (TP_L + FN_L), 2) #0.48
+specificity_L = round(TN_L / (TN_L + FP_L), 2) #0.73
 
 # Measuring the error 
 
@@ -258,7 +260,7 @@ Thetas <- fscores(mods, method = 'MAP', QMC=TRUE)
 #Covariants for modelling
 
 data2 <- data[-as.numeric(rownames(misfits)),] #Removal of misfit rows
-cov <- cbind(data2[,c(2:8,30:33)],as.data.frame(Thetas))
+cov <- cbind(data2[,c(2:10,31:35)],as.data.frame(Thetas))
 
 #scale age for stability
 
@@ -266,15 +268,17 @@ cov$age <- scale(cov$age)
 
 #Model for the errors
 
-glmer_error <- glmer.nb(error ~ age+gender+Rats+Disgust+Biology+Environment + (1|school), data = cov)
+glmer_error <- glmer.nb(error ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), data = cov)
 summary(glmer_error)
 coef(glmer_error)
 anova(glmer_error)
 
 cov2 <- cov[which(cov[,5]>0),]
 
-glmer_error2 <- glmer.nb(error ~ age+gender+Rats+Disgust+Biology+Environment + (1|school), data = cov2)
+
+glmer_error2 <- glmer.nb(error ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), data = cov2)
 summary(glmer_error2)
+
 
 #Model for the success
 
@@ -282,6 +286,58 @@ glmer_success <- glmer(success ~ age+gender+Rats+Disgust+Biology+Environment + (
                        family=binomial, data = cov)
 summary(glmer_success)
 coef(glmer_success)
+
+glmer_success2 <- glmer(success ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), 
+                       family=binomial, data = cov)
+summary(glmer_success2)
+coef(glmer_success2)
+
+#Model for the TFPN
+
+cov$tn = as.factor(with(data, ifelse(cov$acc=="true_neg" , "1","0"))) 
+cov$tp = as.factor(with(data, ifelse(cov$acc=="true_pos" , "1","0"))) 
+cov$fn = as.factor(with(data, ifelse(cov$acc=="false_neg" , "1","0"))) 
+cov$fp = as.factor(with(data, ifelse(cov$acc=="false_pos" , "1","0"))) 
+
+
+
+glmer_tn <- glmer(tn ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), 
+                        family=binomial, data = cov)
+summary(glmer_tn)
+coef(glmer_tn)
+
+glmer_tp <- glmer(tp ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), 
+                  family=binomial, data = cov)
+summary(glmer_tp)
+coef(glmer_tp)
+
+glmer_fn <- glmer(fn ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), 
+                  family=binomial, data = cov)
+summary(glmer_fn)
+coef(glmer_fn)
+
+glmer_fp <- glmer(fp ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), 
+                  family=binomial, data = cov)
+summary(glmer_fp)
+coef(glmer_fp)
+
+cov3 <- cov[which(cov[,4]>0),]
+
+
+glmer_fp2 <- glmer(fp ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), 
+                  family=binomial, data = cov3)
+summary(glmer_fp2)
+coef(glmer_fp2)
+
+
+cov4 <- cov[which(cov[,5]==0),]
+
+
+glmer_fp3 <- glmer(fp ~ age+gender+help+volont+Rats+Disgust+Biology+Environment + (1|school), 
+                   family=binomial, data = cov4)
+summary(glmer_fp3)
+coef(glmer_fp3)
+
 
 # table of estimates with 95% CI
 
